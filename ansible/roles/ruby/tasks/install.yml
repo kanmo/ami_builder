@@ -1,0 +1,100 @@
+---
+- name: install yum security plugin
+  yum: pkg=yum-plugin-security state=latest
+  sudo: yes
+
+- name: update yum security
+  shell: yum -y --security update-minimal
+  sudo: yes
+
+- name: install yum packages
+  yum: name={{ item }} state=present
+  sudo: yes
+  with_items:
+    - gcc-c++
+    - glibc-headers
+    - openssl-devel
+    - readline
+    - readline-devel
+    - libyaml-devel
+    - libffi-devel
+    - libxml2
+    - libxslt
+    - libxml2-devel
+    - libxslt-devel
+    - ImageMagick
+    - ImageMagick-devel
+    - zlib
+    - zlib-devel
+    - mysql-devel
+    - git
+    - ruby-devel
+    - bzip2
+
+- name: check rbenv presence
+  command: which rbenv
+  ignore_errors: true
+  register: rbenv_path
+
+- name: install rbenv
+  sudo: yes
+  git: repo=https://github.com/sstephenson/rbenv.git dest={{ rbenv_root }}
+  when: rbenv_path.rc != 0
+
+- name: install ruby-build
+  sudo: yes
+  git: repo=https://github.com/sstephenson/ruby-build.git dest={{ rbenv_root }}/plugins/ruby-build
+  when: rbenv_path.rc != 0
+
+- name: create shims dir
+  sudo: yes
+  file: path={{ rbenv_root }}/shims state=directory
+  when: rbenv_path.rc != 0
+
+- name: create versions dir
+  sudo: yes
+  file: path={{ rbenv_root }}/versions state=directory
+  when: rbenv_path.rc != 0
+
+- name: change owner of install dir
+  sudo: yes
+  command: chgrp -R {{ app_user }} {{ rbenv_root }}
+  when: rbenv_path.rc != 0
+
+- name: change mode of install dir
+  sudo: yes
+  command: chmod -R g+rwxXs {{ rbenv_root }}
+  when: rbenv_path.rc != 0
+
+- name: Set rbenv env file
+  sudo: yes
+  copy: src=rbenv.sh dest=/etc/profile.d mode=0775
+  when: rbenv_path.rc != 0
+
+- name: check ruby version
+  shell: rbenv versions | grep {{ ruby_version }} > /dev/null ; echo $?
+  ignore_errors: true
+  register: ruby_is_installed
+  changed_when: ruby_is_installed.stdout != '0'
+
+- name: install ruby with rbenv
+  shell: bash -lc "rbenv install {{ ruby_version }}"
+  args:
+    creates: "{{ rbenv_root }}/versions/{{  ruby_version  }}/bin/ruby"
+
+- name: check ruby version
+  shell: ruby -v | grep {{ ruby_version }} > /dev/null ; echo $?
+  register: is_correct_version
+  changed_when: is_correct_version.stdout != '0'
+
+- name: Switch Ruby version
+  shell: bash -lc "rbenv global {{ ruby_version }} && rbenv rehash"
+  when: is_correct_version.stdout != '0'
+
+- name: update rubygems
+  shell: bash -lc "rbenv exec gem update --system"
+
+- name: install common gems
+  shell: bash -lc "rbenv exec gem install bundler io-console --no-ri --no-rdoc"
+  args:
+    creates: "{{ rbenv_root }}/shims/bundle"

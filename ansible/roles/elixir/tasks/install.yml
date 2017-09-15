@@ -1,0 +1,28 @@
+---
+# must execute erlang role before elixir role
+
+- name: download elixir
+  sudo: yes
+  get_url: url=https://github.com/elixir-lang/elixir/releases/download/v1.5.1/Precompiled.zip dest={{ src_dir }}
+
+- name: change owner of install dir
+  sudo: yes
+  command: chgrp -R {{ app_user }} {{ src_dir }}
+
+- name: change mode of install dir
+  sudo: yes
+  command: chmod -R g+rwxXs {{ src_dir }}
+
+- name: unzip elixir_src
+  shell: bash -lc "sudo unzip Precompiled.zip -d /opt/elixir"
+  args:
+    chdir: "{{ src_dir }}"
+    creates: "/opt/elixir"
+
+- name: add elixir to path
+  shell: |
+    bash lc "echo 'export PATH=/opt/elixir/bin:$PATH' >> /home/ec2_user/.bash_profile"
+    bash lc "source /home/ec2-user/.bash_profile"
+
+- name: install hex
+  shell: bash -lc "mix local.hex"

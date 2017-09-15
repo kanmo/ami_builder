@@ -1,0 +1,9 @@
+#
+# common.yml
+#
+- hosts: all
+  sudo: yes
+  remote_user: "{{ ansible_remote_user_name }}"
+  roles:
+    - erlang
+    - elixir

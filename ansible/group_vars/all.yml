@@ -1,0 +1,3 @@
+---
+ansible_remote_user_name: ec2-user
+timezone: UTC

@@ -1,0 +1,53 @@
+---
+- name: install yum security plugin
+  yum: pkg=yum-plugin-security state=latest
+  sudo: yes
+
+- name: update yum security
+  shell: yum -y --security update-minimal
+  sudo: yes
+
+- name: install yum packages
+  yum: name={{ item }} state=present
+  sudo: yes
+  with_items:
+    - ncurses
+    - ncurses-devel
+    - gcc
+    - gcc-c++
+    - glibc-devel
+    - make
+    - autoconf
+    - openssl
+    - openssl-devel
+    - unixODBC
+    - unixODBC-devel
+    - fop
+    - java-1.8.0-openjdk-devel
+    - git
+
+- name: download erlang
+  sudo: yes
+  get_url: url=http://www.erlang.org/download/otp_src_20.0.tar.gz dest={{ src_dir }}
+
+- name: change owner of install dir
+  sudo: yes
+  command: chgrp -R {{ app_user }} {{ src_dir }}
+
+- name: change mode of install dir
+  sudo: yes
+  command: chmod -R g+rwxXs {{ src_dir }}
+
+- name: unzip erlang_src
+  shell: bash -lc "sudo tar -zxf otp_src_20.0.tar.gz"
+  args:
+    chdir: "{{ src_dir }}"
+    creates: "{{ src_dir }}/otp_src_20.0"
+
+- name: install erlang
+  shell: |
+    bash -lc "./configure"
+    bash -lc "make"
+    bash -lc "make install"
+  args:
+    chdir: "{{ src_dir }}/otp_src_20.0"
