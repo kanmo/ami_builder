@@ -1,0 +1,6 @@
+---
+src_dir: /usr/local/src
+app_user: ec2-user
+ruby_version: 2.3.1
+bundler_version: 1.11.2
+rbenv_root: /usr/local/rbenv

@@ -26,23 +26,32 @@
     - java-1.8.0-openjdk-devel
     - git
 
+- name: check erlang presence
+  command: which erl
+  ignore_errors: true
+  register: erlang_path
+
 - name: download erlang
   sudo: yes
   get_url: url=http://www.erlang.org/download/otp_src_20.0.tar.gz dest={{ src_dir }}
+  when: erlang_path.rc != 0
 
 - name: change owner of install dir
   sudo: yes
   command: chgrp -R {{ app_user }} {{ src_dir }}
+  when: erlang_path.rc != 0
 
 - name: change mode of install dir
   sudo: yes
   command: chmod -R g+rwxXs {{ src_dir }}
+  when: erlang_path.rc != 0
 
 - name: unzip erlang_src
   shell: bash -lc "sudo tar -zxf otp_src_20.0.tar.gz"
   args:
     chdir: "{{ src_dir }}"
     creates: "{{ src_dir }}/otp_src_20.0"
+  when: erlang_path.rc != 0
 
 - name: install erlang
   shell: |
@@ -51,3 +60,9 @@
     bash -lc "make install"
   args:
     chdir: "{{ src_dir }}/otp_src_20.0"
+  when: erlang_path.rc != 0
+
+- name: add eralng to path
+  sudo: yes
+  copy: src=erlang_path.sh dest=/etc/profile.d mode=0775
+  when: erlang_path.rc != 0
