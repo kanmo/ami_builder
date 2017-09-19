@@ -1,2 +1,2 @@
-export ERL_TOP=/usr/local/src/otp_src_20.0
+export ERL_TOP=/usr/local/lib/erlang
 export PATH="$ERL_TOP/bin:$PATH"
